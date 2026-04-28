@@ -2,360 +2,348 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>超级玛丽风格游戏 - 平台跳跃</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>超级玛丽风格 - 从零开始的移动平台跳跃</title>
     <style>
         * {
             user-select: none;
-            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation; /* 优化触摸操作 */
         }
+
         body {
-            background: linear-gradient(145deg, #0a2f3a 0%, #0a1f2a 100%);
+            margin: 0;
             min-height: 100vh;
+            background: linear-gradient(145deg, #0a2f3a 0%, #06212e 100%);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: 'Courier New', 'Press Start 2P', 'Courier', monospace;
-            margin: 0;
-            padding: 20px;
+            font-family: 'Courier New', 'Press Start 2P', monospace;
+            padding: 16px;
+            box-sizing: border-box;
         }
-        .game-container {
+
+        /* 游戏主容器：固定逻辑宽高比 800:400 = 2:1 */
+        .game-wrapper {
             background: #000;
-            border-radius: 24px;
+            border-radius: 28px;
             padding: 12px;
-            box-shadow: 0 20px 35px rgba(0,0,0,0.5), inset 0 1px 4px rgba(255,255,255,0.2);
+            box-shadow: 0 20px 35px rgba(0,0,0,0.6);
+            max-width: 100%;
+            display: inline-block;
         }
+
         canvas {
             display: block;
-            margin: 0 auto;
-            border-radius: 16px;
-            box-shadow: 0 0 0 3px #f3b33d, 0 0 0 6px #b95f1a;
+            width: 100%;
+            height: auto;
+            border-radius: 20px;
             cursor: pointer;
+            box-shadow: 0 0 0 3px #f3b33d, 0 0 0 6px #b95f1a;
         }
-        .info-panel {
-            margin-top: 16px;
+
+        /* 控制栏（分数 + 重置） */
+        .info-bar {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
             background: #2c1e12;
             padding: 8px 20px;
-            border-radius: 40px;
-            color: #f7e05e;
+            border-radius: 50px;
+            margin-top: 16px;
+            color: #ffdf8c;
             text-shadow: 2px 2px 0 #7a2e00;
-            font-weight: bold;
-            font-size: 1.5rem;
-            gap: 30px;
+            gap: 20px;
             flex-wrap: wrap;
-            justify-content: center;
         }
-        .score-board, .controls-tip {
+
+        .score-box {
             background: #1f1409;
-            padding: 5px 16px;
+            padding: 5px 18px;
             border-radius: 30px;
-            letter-spacing: 1px;
-        }
-        .score-board span, .controls-tip span {
-            color: #ffd966;
-            font-size: 1.6rem;
             font-weight: bold;
+            font-size: 1.3rem;
         }
-        .controls-tip {
-            font-size: 0.8rem;
-            font-family: monospace;
-            background: #2a2418;
+
+        .score-box span {
+            font-size: 1.7rem;
+            color: #ffd966;
         }
+
         button {
             background: #e25822;
             border: none;
             color: white;
             font-family: monospace;
             font-weight: bold;
-            padding: 6px 18px;
-            border-radius: 50px;
+            padding: 6px 20px;
+            border-radius: 40px;
             font-size: 1rem;
+            box-shadow: 0 4px 0 #7a2e00;
+            transition: 0.07s linear;
             cursor: pointer;
-            transition: 0.2s;
-            box-shadow: 0 3px 0 #7a2e00;
         }
+
         button:active {
             transform: translateY(2px);
             box-shadow: 0 1px 0 #7a2e00;
         }
-        .status {
-            background: #2c1e12;
-            padding: 5px 16px;
-            border-radius: 30px;
-            font-size: 1rem;
+
+        /* 触摸按钮区 (专为手机/平板) */
+        .touch-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 18px;
+            gap: 20px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 100px;
+            padding: 10px 20px;
+            backdrop-filter: blur(8px);
+        }
+
+        .touch-btn {
+            background: rgba(30,30,40,0.9);
+            border: 2px solid #ffb347;
+            border-radius: 60px;
+            padding: 12px 25px;
+            text-align: center;
+            font-size: 2rem;
             font-weight: bold;
+            color: #ffdd99;
+            font-family: monospace;
+            flex: 1;
+            max-width: 140px;
+            touch-action: manipulation;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #5a3a1a;
+            transition: 0.03s linear;
         }
-        @keyframes bounce {
-            0% { transform: translateY(0px); }
-            100% { transform: translateY(-3px); }
+
+        .touch-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #5a3a1a;
         }
-        .reset-btn {
-            background: #ffb347;
-            color: #2c1e12;
-            text-shadow: none;
-            font-size: 1rem;
+
+        @media (max-width: 700px) {
+            .touch-btn { font-size: 1.5rem; padding: 10px 12px; }
+            .score-box { font-size: 1rem; }
+            .score-box span { font-size: 1.3rem; }
         }
-        @media (max-width: 1100px) {
-            .info-panel { font-size: 1rem; gap: 12px; }
-            .score-board span { font-size: 1.3rem; }
+
+        .tip {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 12px;
+            color: #ffe0a3;
+            background: #1f2a1b;
+            padding: 4px 12px;
+            border-radius: 30px;
+            display: inline-block;
         }
     </style>
 </head>
 <body>
 <div>
-    <div class="game-container">
-        <canvas id="gameCanvas" width="1000" height="500"></canvas>
-        <div class="info-panel">
-            <div class="score-board">⭐ 金币: <span id="coinScore">0</span></div>
-            <div class="score-board">👾 击杀: <span id="killScore">0</span></div>
-            <div class="status" id="gameStatusText">🏃‍♂️ 游戏中</div>
-            <button id="resetButton" class="reset-btn">🔄 重来</button>
+    <div class="game-wrapper">
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
+        <div class="info-bar">
+            <div class="score-box">🪙 金币 <span id="coinCount">0</span></div>
+            <div class="score-box">👾 击杀 <span id="killCount">0</span></div>
+            <button id="resetBtn">🔄 重来</button>
         </div>
-        <div class="controls-tip">
-            🎮 方向键 ◀ ▶ 移动 &nbsp;&nbsp;|&nbsp;&nbsp; ⬆ 或 空格 跳跃 &nbsp;&nbsp;|&nbsp;&nbsp; 💥 踩扁敌人 +100分 &nbsp;&nbsp;|&nbsp;&nbsp; 🪙 收集金币 +10分
+        <div class="touch-panel" id="touchControls">
+            <div class="touch-btn" id="leftBtn">◀ 左</div>
+            <div class="touch-btn" id="rightBtn">右 ▶</div>
+            <div class="touch-btn" id="jumpBtn">跳 🦘</div>
+        </div>
+        <div class="tip">
+            💡 手机：点按虚拟按钮 &nbsp;&nbsp;|&nbsp;&nbsp; 电脑：方向键 / AD + 空格 / ↑
         </div>
     </div>
 </div>
 
 <script>
     (function(){
-        // ---------- CANVAS ----------
+        // ---------- 固定逻辑分辨率 (所有游戏逻辑基于此) ----------
+        const CANVAS_W = 800;
+        const CANVAS_H = 400;
+        
+        // 获取canvas与上下文
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-
-        // ---------- 固定尺寸参数 ----------
-        const WIDTH = 1000;
-        const HEIGHT = 500;
         
-        // ---------- 游戏状态 ----------
-        let gameOver = false;     // 游戏结束标志
-        let animationId = null;
+        // ---------- 游戏全局状态 ----------
+        let gameOver = false;
+        let coinScore = 0;      // 金币分数
+        let killScore = 0;      // 击杀分数
         
-        // 得分系统
-        let coinPoints = 0;      // 金币总分
-        let killPoints = 0;      // 踩敌总分
-        
-        // 更新UI
-        const coinSpan = document.getElementById('coinScore');
-        const killSpan = document.getElementById('killScore');
-        const gameStatusSpan = document.getElementById('gameStatusText');
+        // DOM 元素更新
+        const coinSpan = document.getElementById('coinCount');
+        const killSpan = document.getElementById('killCount');
+        const resetBtn = document.getElementById('resetBtn');
         
         // ---------- 马里奥物理参数 ----------
-// 重力加速度（每帧增加的速度值）
-// 数值越大，下落越快；越小，下落越慢（类似月球引力）
-const GRAVITY = 0.45;
-
-// 跳跃初速度（负值表示向上）
-// 数值越负，跳得越高；接近 0 则跳不起来
-const JUMP_POWER = -10.5;
-
-// 最大水平速度（像素/帧）
-// 限制马里奥左右移动的最高速度，防止飞太快。1.2 属于较慢的行走速度
-const MAX_SPEED_X = 1.2;
-
-// 水平加速度（每帧增加的速度值）
-// 按方向键时，水平速度会增加 ACC。数值越小，加速越慢（起步肉）
-const ACC = 0.1;
-
-// 地面/空中阻尼系数（摩擦力）
-// 不按方向键时，速度会乘以 DAMPING 逐渐减速。0.89 表示每帧保留 89% 的速度，减速较慢
-// 数值越小，减速越快（如 0.5 会很快停下）；接近 1 则几乎无摩擦
-const DAMPING = 0.89;
-
-// 马里奥对象，包含位置、速度、状态等
-let mario = {
-    x: 80,          // 世界坐标 X（像素），初始靠左
-    y: 0,           // 世界坐标 Y（动态计算，碰撞系统会自动把它放到地面上）
-    width: 32,      // 碰撞箱宽度（像素）
-    height: 32,     // 碰撞箱高度（像素）
-    vx: 0,          // 水平速度（正为右，负为左）
-    vy: 0,          // 垂直速度（正为下，负为上，跳跃时瞬间设为 JUMP_POWER）
-    grounded: false,// 是否站在地面上（用于判断能否跳跃）
-    facingRight: true // 绘图用：true 表示面朝右，false 表示面朝左
-};
+        const GRAVITY = 0.6;
+        const JUMP_POWER = -9.5;
+        const MAX_SPEED_X = 4.2;
+        const ACC = 0.45;
+        const DAMPING = 0.91;
+        
+        let mario = {
+            x: 60, y: 0, w: 28, h: 28,
+            vx: 0, vy: 0,
+            grounded: false,
+            facingRight: true
+        };
         
         // ---------- 平台定义 (x, y, w, h) ----------
-        // 地面平台 (基础地面)
         const platforms = [
-            { x: 0, y: 468, w: 1000, h: 32 },      // 大地
-            { x: 150, y: 400, w: 100, h: 20 },     // 左中浮岛
-            { x: 340, y: 350, w: 90, h: 20 },      // 中部平台1
-            { x: 530, y: 310, w: 100, h: 20 },     // 中部平台2 (较高)
-            { x: 720, y: 270, w: 90, h: 20 },      // 右侧高台
-            { x: 860, y: 380, w: 80, h: 20 },      // 右侧低位平台
-            { x: 30, y: 310, w: 70, h: 20 },       // 左边高跳台
-            { x: 600, y: 415, w: 70, h: 20 }       // 中低辅助平台
+            { x: 0, y: 368, w: 800, h: 32 },        // 大地
+            { x: 150, y: 320, w: 80, h: 18 },       // 左浮岛
+            { x: 300, y: 270, w: 70, h: 18 },       
+            { x: 470, y: 220, w: 80, h: 18 },       // 高台
+            { x: 620, y: 300, w: 70, h: 18 },
+            { x: 40, y: 250, w: 60, h: 18 },        // 左上方挑战台
+            { x: 700, y: 360, w: 70, h: 18 }        // 地面附近右平台
         ];
         
-        // ---------- 敌人 ----------
+        // ---------- 敌人 (Goomba风格) ----------
         let enemies = [];
-        const ENEMY_WIDTH = 32;
-        const ENEMY_HEIGHT = 32;
-        
-        // 初始化敌人数据
         function initEnemies() {
             return [
-                { x: 220, y: 436, width: ENEMY_WIDTH, height: ENEMY_HEIGHT, vx: 1.1, direction: 1, alive: true },
-                { x: 580, y: 436, width: ENEMY_WIDTH, height: ENEMY_HEIGHT, vx: -1.0, direction: -1, alive: true },
-                { x: 780, y: 436, width: ENEMY_WIDTH, height: ENEMY_HEIGHT, vx: 0.9, direction: 1, alive: true },
-                { x: 880, y: 348, width: ENEMY_WIDTH, height: ENEMY_HEIGHT, vx: -0.8, direction: -1, alive: true }  // 右侧高台敌人
+                { x: 200, y: 336, w: 28, h: 28, vx: 0.9, dir: 1, alive: true },
+                { x: 520, y: 336, w: 28, h: 28, vx: -1.1, dir: -1, alive: true },
+                { x: 660, y: 188, w: 28, h: 28, vx: 1.0, dir: 1, alive: true },   // 高台敌人
+                { x: 100, y: 218, w: 28, h: 28, vx: -0.8, dir: -1, alive: true }    // 左边敌人
             ];
         }
         
         // ---------- 金币 ----------
         let coins = [];
-        const COIN_SIZE = 14;
-        
+        const COIN_SIZE = 12;
         function initCoins() {
             return [
-                { x: 190, y: 370, w: COIN_SIZE, h: COIN_SIZE, collected: false },   // 左浮岛
-                { x: 375, y: 320, w: COIN_SIZE, h: COIN_SIZE, collected: false },   // 中平台1
-                { x: 565, y: 278, w: COIN_SIZE, h: COIN_SIZE, collected: false },   // 中平台2 (较高)
-                { x: 755, y: 238, w: COIN_SIZE, h: COIN_SIZE, collected: false },   // 右侧高台
-                { x: 895, y: 350, w: COIN_SIZE, h: COIN_SIZE, collected: false },   // 右下平台
-                { x: 65, y: 278, w: COIN_SIZE, h: COIN_SIZE, collected: false },    // 左侧高台金币
-                { x: 635, y: 385, w: COIN_SIZE, h: COIN_SIZE, collected: false },    // 中低辅助
-                { x: 460, y: 445, w: COIN_SIZE, h: COIN_SIZE, collected: false }     // 地面附近金币
+                { x: 185, y: 290, w: COIN_SIZE, h: COIN_SIZE, collected: false },
+                { x: 330, y: 240, w: COIN_SIZE, h: COIN_SIZE, collected: false },
+                { x: 500, y: 190, w: COIN_SIZE, h: COIN_SIZE, collected: false },
+                { x: 660, y: 270, w: COIN_SIZE, h: COIN_SIZE, collected: false },
+                { x: 80, y: 218, w: COIN_SIZE, h: COIN_SIZE, collected: false },
+                { x: 735, y: 330, w: COIN_SIZE, h: COIN_SIZE, collected: false },
+                { x: 410, y: 340, w: COIN_SIZE, h: COIN_SIZE, collected: false }
             ];
         }
         
-        // ---------- 辅助函数: 重置游戏全状态 ----------
+        // ---------- 辅助函数：更新UI ----------
+        function updateUI() {
+            coinSpan.innerText = coinScore;
+            killSpan.innerText = killScore;
+        }
+        
+        // ---------- 重置整个游戏 ----------
         function resetGame() {
             gameOver = false;
-            coinPoints = 0;
-            killPoints = 0;
-            updateScoreUI();
-            gameStatusSpan.innerText = "🏃‍♂️ 游戏中";
-            gameStatusSpan.style.color = "#f7e05e";
+            coinScore = 0;
+            killScore = 0;
+            updateUI();
             
             // 重置马里奥
             mario = {
-                x: 80,
-                y: 0,
-                width: 32,
-                height: 32,
-                vx: 0,
-                vy: 0,
+                x: 60, y: 0, w: 28, h: 28,
+                vx: 0, vy: 0,
                 grounded: false,
                 facingRight: true
             };
-            // 让马里奥通过碰撞落到地面 (先用临时y)
-            mario.y = 400;  // 预置高度
-            // 解决碰撞，确保站在地面
-            applyPlatformCollision(); // 强制校正一次
+            // 让马里奥站在地面上（碰撞矫正）
+            applyPlatformCollision();
             
-            // 重置敌人 & 金币
+            // 重置敌人和金币
             enemies = initEnemies();
             coins = initCoins();
             
-            // 清空键盘缓存
+            // 清空输入缓冲
             leftPressed = false;
             rightPressed = false;
             jumpRequested = false;
-            canJumpBuffer = false;
         }
         
-        // 更新UI分数
-        function updateScoreUI() {
-            coinSpan.innerText = coinPoints;
-            killSpan.innerText = killPoints;
-        }
-        
-        // ---------- 碰撞与平台调整 (核心) ----------
-        // 水平碰撞 (X轴)
+        // ========== 碰撞与物理引擎 ==========
+        // 水平移动 + 平台碰撞
         function handleHorizontalCollision() {
             mario.x += mario.vx;
             for (let plat of platforms) {
-                if (mario.x < plat.x + plat.w && mario.x + mario.width > plat.x &&
-                    mario.y + mario.height > plat.y && mario.y < plat.y + plat.h) {
-                    // 碰撞了, 根据方向回退
+                if (mario.x < plat.x + plat.w && mario.x + mario.w > plat.x &&
+                    mario.y + mario.h > plat.y && mario.y < plat.y + plat.h) {
                     if (mario.vx > 0) {
-                        mario.x = plat.x - mario.width;
+                        mario.x = plat.x - mario.w;
                     } else if (mario.vx < 0) {
                         mario.x = plat.x + plat.w;
                     }
                 }
             }
-            // 左右边界限制 (不能超出画布)
+            // 世界边界
             if (mario.x < 0) mario.x = 0;
-            if (mario.x + mario.width > WIDTH) mario.x = WIDTH - mario.width;
+            if (mario.x + mario.w > CANVAS_W) mario.x = CANVAS_W - mario.w;
         }
         
-        // 垂直碰撞 + 接地检测，返回是否接地
+        // 垂直移动 + 接地检测
         function handleVerticalCollision() {
             mario.y += mario.vy;
             let groundedFlag = false;
             for (let plat of platforms) {
-                if (mario.x < plat.x + plat.w && mario.x + mario.width > plat.x &&
-                    mario.y + mario.height > plat.y && mario.y < plat.y + plat.h) {
-                    // 垂直碰撞处理
-                    if (mario.vy >= 0 && (mario.y + mario.height - mario.vy) <= plat.y) {
-                        // 从上往下掉落 顶到平台顶部
-                        mario.y = plat.y - mario.height;
+                if (mario.x < plat.x + plat.w && mario.x + mario.w > plat.x &&
+                    mario.y + mario.h > plat.y && mario.y < plat.y + plat.h) {
+                    // 从上往下落
+                    if (mario.vy >= 0 && (mario.y + mario.h - mario.vy) <= plat.y) {
+                        mario.y = plat.y - mario.h;
                         mario.vy = 0;
                         groundedFlag = true;
-                    } else if (mario.vy < 0) {
-                        // 向上跳顶到头
+                    } 
+                    // 头顶撞块
+                    else if (mario.vy < 0) {
                         mario.y = plat.y + plat.h;
                         mario.vy = 0;
                     }
                 }
             }
-            // 天花板边界限制 (y>=0)
+            // 天花板
             if (mario.y < 0) {
                 mario.y = 0;
                 if (mario.vy < 0) mario.vy = 0;
             }
             // 跌落死亡 (超出底部)
-            if (mario.y + mario.height > HEIGHT) {
+            if (mario.y + mario.h > CANVAS_H) {
                 gameOver = true;
-                gameStatusSpan.innerText = "💀 游戏结束 按重来 💀";
-                gameStatusSpan.style.color = "#ff8a7a";
             }
             return groundedFlag;
         }
         
-        // 综合平台碰撞 (用在初始化，以及每帧)
+        // 额外矫正（重置时使用）
         function applyPlatformCollision() {
-            // 强制做一次完整碰撞矫正 (先水平后垂直)
-            let oldX = mario.x, oldY = mario.y;
-            // 水平回推
-            for (let plat of platforms) {
-                if (mario.x < plat.x + plat.w && mario.x + mario.width > plat.x &&
-                    mario.y + mario.height > plat.y && mario.y < plat.y + plat.h) {
-                    if (mario.x + mario.width > plat.x && mario.x < plat.x) {
-                        mario.x = plat.x - mario.width;
-                    } else if (mario.x < plat.x + plat.w && mario.x + mario.width > plat.x + plat.w) {
-                        mario.x = plat.x + plat.w;
+            // 强行碰撞一次，让马里奥站在地面上
+            for (let i=0; i<5; i++) {  // 迭代几次保证稳定
+                mario.y += 1;
+                let grounded = false;
+                for (let plat of platforms) {
+                    if (mario.x < plat.x + plat.w && mario.x + mario.w > plat.x &&
+                        mario.y + mario.h > plat.y && mario.y < plat.y + plat.h) {
+                        if (mario.y + mario.h - 1 <= plat.y) {
+                            mario.y = plat.y - mario.h;
+                            grounded = true;
+                            break;
+                        }
                     }
                 }
-            }
-            // 垂直矫正
-            for (let plat of platforms) {
-                if (mario.x < plat.x + plat.w && mario.x + mario.width > plat.x &&
-                    mario.y + mario.height > plat.y && mario.y < plat.y + plat.h) {
-                    if (mario.y + mario.height > plat.y && mario.y < plat.y) {
-                        mario.y = plat.y - mario.height;
-                        mario.vy = 0;
-                    } else if (mario.y < plat.y + plat.h && mario.y + mario.height > plat.y + plat.h) {
-                        mario.y = plat.y + plat.h;
-                        mario.vy = 0;
-                    }
-                }
+                if (grounded) break;
             }
             if (mario.x < 0) mario.x = 0;
-            if (mario.x + mario.width > WIDTH) mario.x = WIDTH - mario.width;
-            if (mario.y < 0) mario.y = 0;
+            if (mario.x + mario.w > CANVAS_W) mario.x = CANVAS_W - mario.w;
         }
         
-        // 更新马里奥移动和物理
-        function updateMarioMovement() {
+        // 马里奥更新 (输入 + 物理)
+        function updateMario() {
             if (gameOver) return;
             
-            // 水平输入
+            // 左右输入
             if (leftPressed) {
                 mario.vx -= ACC;
                 if (mario.vx < -MAX_SPEED_X) mario.vx = -MAX_SPEED_X;
@@ -365,153 +353,125 @@ let mario = {
                 if (mario.vx > MAX_SPEED_X) mario.vx = MAX_SPEED_X;
                 mario.facingRight = true;
             } else {
-                // 摩擦力
                 mario.vx *= DAMPING;
                 if (Math.abs(mario.vx) < 0.2) mario.vx = 0;
             }
             
             // 重力
             mario.vy += GRAVITY;
-            if (mario.vy > 15) mario.vy = 15;
+            if (mario.vy > 12) mario.vy = 12;
             
-            // 跳跃处理 (接地并且按下跳跃)
-            let wasGrounded = mario.grounded;
-            // 先水平移动碰撞
+            // 碰撞顺序：水平 -> 垂直
             handleHorizontalCollision();
-            // 垂直移动并获取接地状态
-            mario.grounded = handleVerticalCollision();
+            let grounded = handleVerticalCollision();
+            mario.grounded = grounded;
             
-            // 跳跃触发 (利用缓冲，但简单按需)
+            // 跳跃处理
             if (jumpRequested && mario.grounded && !gameOver) {
                 mario.vy = JUMP_POWER;
                 mario.grounded = false;
                 jumpRequested = false;
             } else if (jumpRequested && !mario.grounded) {
-                // 未接地不能跳, 清除请求防止浮空连跳
-                jumpRequested = false;
-            }
-            
-            // 额外边界保护
-            if (mario.y + mario.height > HEIGHT) {
-                gameOver = true;
-                gameStatusSpan.innerText = "💀 游戏结束 按重来 💀";
-                gameStatusSpan.style.color = "#ff8a7a";
+                jumpRequested = false; // 未接地取消请求
             }
         }
         
-        // ---------- 敌人AI移动 + 边界限制 ----------
+        // ---------- 敌人逻辑 ----------
         function updateEnemies() {
             if (gameOver) return;
-            for (let i = 0; i < enemies.length; i++) {
-                const e = enemies[i];
+            for (let e of enemies) {
                 if (!e.alive) continue;
-                // 移动
                 e.x += e.vx;
-                // 边界阻挡 (防止走出画布, 并且不掉落平台简单限制左右边界)
+                // 边界限制或简单转身
                 if (e.x <= 0) {
                     e.x = 0;
                     e.vx = Math.abs(e.vx);
                 }
-                if (e.x + e.width >= WIDTH) {
-                    e.x = WIDTH - e.width;
+                if (e.x + e.w >= CANVAS_W) {
+                    e.x = CANVAS_W - e.w;
                     e.vx = -Math.abs(e.vx);
                 }
-                // 额外增加平台感知（防止浮空敌人掉下，简单让高台的敌人不超出平台范围简单限制x边界已经足够）
-                // 对于右边高台的敌人，保留边界限制，为了真实感可加入平台y逻辑，但游戏平衡已经很有趣
-                // 碰撞时再处理马里奥与敌人交互
             }
-        }
-        
-        // 马里奥与敌人的交互 (踩踏 或者 受伤)
-        function handleEnemyCollision() {
-            if (gameOver) return;
-            for (let i = 0; i < enemies.length; i++) {
-                const e = enemies[i];
-                if (!e.alive) continue;
-                // 碰撞检测
-                if (mario.x < e.x + e.width && mario.x + mario.width > e.x &&
-                    mario.y < e.y + e.height && mario.y + mario.height > e.y) {
-                    // 马里奥从上方踩踏: 马里奥底部 > 敌人中间偏上，且垂直速度为正(下落)
-                    const marioBottom = mario.y + mario.height;
-                    const enemyTop = e.y;
-                    const isStomping = (mario.vy > 0) && (marioBottom - enemyTop <= 12) && (mario.y + mario.height - mario.vy <= enemyTop + 10);
-                    if (isStomping) {
-                        // 踩死敌人
-                        e.alive = false;
-                        killPoints += 100;
-                        updateScoreUI();
-                        // 马里奥弹跳
-                        mario.vy = -8;
-                        mario.grounded = false;
-                    } else {
-                        // 否则 马里奥受伤死亡
-                        gameOver = true;
-                        gameStatusSpan.innerText = "💀 碰到怪物... 按重来 💀";
-                        gameStatusSpan.style.color = "#ff8a7a";
-                        return;
-                    }
-                }
-            }
-            // 过滤掉死亡的敌人
-            for (let i = enemies.length-1; i >= 0; i--) {
+            // 移除已死亡敌人 (踩死后移除)
+            for (let i=enemies.length-1; i>=0; i--) {
                 if (!enemies[i].alive) enemies.splice(i,1);
             }
         }
         
-        // 金币收集
-        function handleCoinCollection() {
+        // 马里奥与敌人的碰撞 (踩踏 vs 受伤)
+        function handleEnemyCollision() {
             if (gameOver) return;
-            for (let i = 0; i < coins.length; i++) {
-                const c = coins[i];
-                if (c.collected) continue;
-                if (mario.x < c.x + c.w && mario.x + mario.width > c.x &&
-                    mario.y < c.y + c.h && mario.y + mario.height > c.y) {
-                    c.collected = true;
-                    coinPoints += 10;
-                    updateScoreUI();
+            for (let i=0; i<enemies.length; i++) {
+                const e = enemies[i];
+                if (!e.alive) continue;
+                // 碰撞检测
+                if (mario.x < e.x + e.w && mario.x + mario.w > e.x &&
+                    mario.y < e.y + e.h && mario.y + mario.h > e.y) {
+                    // 踩踏条件: 马里奥正在下落，且底部在敌人上半部分
+                    const isStomp = (mario.vy > 0) && (mario.y + mario.h - e.y <= 12);
+                    if (isStomp) {
+                        e.alive = false;
+                        killScore += 100;
+                        updateUI();
+                        // 弹跳
+                        mario.vy = -7;
+                        mario.grounded = false;
+                    } else {
+                        // 否则碰撞即死亡
+                        gameOver = true;
+                        return;
+                    }
                 }
             }
         }
         
-        // ---------- 绚丽绘图区 (经典超级玛丽风格) ----------
-        function drawBackground() {
-            // 天空渐变
-            const grad = ctx.createLinearGradient(0, 0, 0, HEIGHT);
-            grad.addColorStop(0, "#7ec8e0");
-            grad.addColorStop(0.7, "#4aa3c2");
-            grad.addColorStop(1, "#2c6b54");
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, WIDTH, HEIGHT);
-            // 云朵
-            ctx.fillStyle = "rgba(255,255,240,0.9)";
-            drawCloud(120, 70, 50);
-            drawCloud(400, 50, 65);
-            drawCloud(720, 95, 55);
-            drawCloud(860, 40, 45);
+        // 金币收集
+        function handleCoins() {
+            if (gameOver) return;
+            for (let c of coins) {
+                if (c.collected) continue;
+                if (mario.x < c.x + c.w && mario.x + mario.w > c.x &&
+                    mario.y < c.y + c.h && mario.y + mario.h > c.y) {
+                    c.collected = true;
+                    coinScore += 10;
+                    updateUI();
+                }
+            }
         }
         
-        function drawCloud(x, y, size) {
+        // ---------- 绘图模块 (复古马里奥风格) ----------
+        function drawBackground() {
+            // 天空渐变
+            const grad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
+            grad.addColorStop(0, "#72c2e0");
+            grad.addColorStop(0.6, "#4797b0");
+            grad.addColorStop(1, "#2c7840");
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+            // 云朵
+            ctx.fillStyle = "rgba(255,250,210,0.9)";
+            drawCloud(90, 50, 45);
+            drawCloud(380, 70, 55);
+            drawCloud(650, 45, 50);
+        }
+        
+        function drawCloud(x, y, r) {
             ctx.beginPath();
-            ctx.arc(x, y, size*0.5, 0, Math.PI*2);
-            ctx.arc(x+size*0.4, y-size*0.2, size*0.5, 0, Math.PI*2);
-            ctx.arc(x-size*0.3, y-size*0.2, size*0.45, 0, Math.PI*2);
-            ctx.arc(x+size*0.2, y+size*0.15, size*0.45, 0, Math.PI*2);
+            ctx.arc(x, y, r*0.5, 0, Math.PI*2);
+            ctx.arc(x+r*0.4, y-r*0.2, r*0.5, 0, Math.PI*2);
+            ctx.arc(x-r*0.3, y-r*0.2, r*0.45, 0, Math.PI*2);
             ctx.fill();
         }
         
         function drawPlatforms() {
-            for(let plat of platforms){
+            for (let p of platforms) {
                 ctx.fillStyle = "#8b5a2b";
-                ctx.shadowBlur = 0;
-                ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
+                ctx.fillRect(p.x, p.y, p.w, p.h);
                 ctx.fillStyle = "#c28a40";
-                ctx.fillRect(plat.x, plat.y-4, plat.w, 6);
-                ctx.fillStyle = "#6b3e1a";
-                ctx.fillRect(plat.x, plat.y+plat.h-4, plat.w, 4);
-                // 草地边缘
-                if(plat.y >= 460){
+                ctx.fillRect(p.x, p.y-5, p.w, 7);
+                if(p.y > 360) { // 草地
                     ctx.fillStyle = "#5e9c3e";
-                    ctx.fillRect(plat.x, plat.y-8, plat.w, 8);
+                    ctx.fillRect(p.x, p.y-8, p.w, 8);
                 }
             }
         }
@@ -520,132 +480,106 @@ let mario = {
             let x = mario.x, y = mario.y;
             ctx.save();
             if (!mario.facingRight) {
-                ctx.translate(x + mario.width/2, y + mario.height/2);
+                ctx.translate(x + mario.w/2, y + mario.h/2);
                 ctx.scale(-1, 1);
-                ctx.translate(-(x + mario.width/2), -(y + mario.height/2));
+                ctx.translate(-(x + mario.w/2), -(y + mario.h/2));
             }
-            // 帽子
-            ctx.fillStyle = "#e33c1a";
-            ctx.fillRect(x+4, y-3, 24, 12);
-            ctx.fillStyle = "#c02a0a";
-            ctx.fillRect(x+8, y-8, 16, 8);
-            // 脸部
+            // 红帽子
+            ctx.fillStyle = "#e34234";
+            ctx.fillRect(x+4, y-3, 20, 10);
+            ctx.fillStyle = "#bd2a1a";
+            ctx.fillRect(x+8, y-8, 12, 7);
+            // 脸
             ctx.fillStyle = "#f7cf9f";
-            ctx.fillRect(x+4, y+4, 24, 24);
+            ctx.fillRect(x+4, y+4, 20, 22);
             // 胡子
             ctx.fillStyle = "#8b4513";
-            ctx.fillRect(x+6, y+18, 8, 6);
-            ctx.fillRect(x+18, y+18, 8, 6);
+            ctx.fillRect(x+5, y+16, 7, 5);
+            ctx.fillRect(x+16, y+16, 7, 5);
             // 眼睛
             ctx.fillStyle = "#2c2c2c";
-            ctx.fillRect(x+8, y+10, 5, 6);
-            ctx.fillRect(x+19, y+10, 5, 6);
-            ctx.fillStyle = "white";
-            ctx.fillRect(x+9, y+11, 2, 3);
-            ctx.fillRect(x+20, y+11, 2, 3);
+            ctx.fillRect(x+7, y+9, 4, 5);
+            ctx.fillRect(x+17, y+9, 4, 5);
             // 衣服
-            ctx.fillStyle = "#dd2e2e";
-            ctx.fillRect(x+4, y+24, 24, 8);
-            ctx.fillStyle = "#1c3c8c";
-            ctx.fillRect(x+8, y+30, 16, 8);
-            // 吊带
-            ctx.fillStyle = "#f5bc70";
-            ctx.fillRect(x+6, y+28, 4, 10);
-            ctx.fillRect(x+22, y+28, 4, 10);
+            ctx.fillStyle = "#d93c1f";
+            ctx.fillRect(x+4, y+24, 20, 8);
+            ctx.fillStyle = "#2c3e8c";
+            ctx.fillRect(x+8, y+28, 12, 6);
             ctx.restore();
         }
         
         function drawEnemy(e) {
             ctx.fillStyle = "#9b5a2a";
-            ctx.fillRect(e.x, e.y, e.width, e.height);
-            ctx.fillStyle = "#62381a";
-            ctx.fillRect(e.x+4, e.y+5, 6, 8);
-            ctx.fillRect(e.x+e.width-10, e.y+5, 6, 8);
+            ctx.fillRect(e.x, e.y, e.w, e.h);
+            ctx.fillStyle = "#5a3a1a";
+            ctx.fillRect(e.x+5, e.y+6, 6, 7);
+            ctx.fillRect(e.x+e.w-11, e.y+6, 6, 7);
             ctx.fillStyle = "#2f1c0c";
-            ctx.fillRect(e.x+12, e.y+18, 8, 6);
+            ctx.fillRect(e.x+10, e.y+18, 8, 6);
             ctx.fillStyle = "white";
-            ctx.fillRect(e.x+6, e.y+12, 5, 5);
-            ctx.fillRect(e.x+e.width-11, e.y+12, 5, 5);
-            ctx.fillStyle = "black";
-            ctx.fillRect(e.x+7, e.y+14, 2, 2);
-            ctx.fillRect(e.x+e.width-10, e.y+14, 2, 2);
-            // 眉毛
-            ctx.fillStyle = "#3b2412";
-            ctx.fillRect(e.x+5, e.y+10, 8, 2);
-            ctx.fillRect(e.x+19, e.y+10, 8, 2);
+            ctx.fillRect(e.x+6, e.y+12, 4, 4);
+            ctx.fillRect(e.x+e.w-10, e.y+12, 4, 4);
         }
         
         function drawCoins() {
-            for(let c of coins) {
-                if(c.collected) continue;
+            for (let c of coins) {
+                if (c.collected) continue;
                 ctx.fillStyle = "#f7d44a";
-                ctx.shadowBlur = 6;
+                ctx.shadowBlur = 8;
                 ctx.shadowColor = "#ffbb33";
                 ctx.beginPath();
-                ctx.ellipse(c.x+COIN_SIZE/2, c.y+COIN_SIZE/2, COIN_SIZE/2, COIN_SIZE/2.5, 0, 0, Math.PI*2);
+                ctx.ellipse(c.x+COIN_SIZE/2, c.y+COIN_SIZE/2, COIN_SIZE/2, COIN_SIZE/2.2, 0, 0, Math.PI*2);
                 ctx.fill();
-                ctx.fillStyle = "#f0a500";
+                ctx.fillStyle = "#ffbf00";
                 ctx.beginPath();
-                ctx.ellipse(c.x+COIN_SIZE/2+1, c.y+COIN_SIZE/2-1, 3, 4, 0, 0, Math.PI*2);
+                ctx.ellipse(c.x+COIN_SIZE/2+1, c.y+COIN_SIZE/2-1, 3, 3.5, 0, 0, Math.PI*2);
                 ctx.fill();
-                ctx.fillStyle = "white";
-                ctx.fillRect(c.x+5, c.y+4, 2, 2);
                 ctx.shadowBlur = 0;
             }
         }
         
         function drawGameOverlay() {
-            if(gameOver){
-                ctx.font = "bold 28monospace";
-                ctx.shadowBlur = 0;
+            if (gameOver) {
+                ctx.font = "bold 28px 'Courier New'";
                 ctx.fillStyle = "#d64531";
-                ctx.shadowColor = "black";
-                ctx.fillText("GAME OVER", WIDTH/2-110, HEIGHT/2-40);
-                ctx.font = "18monospace";
+                ctx.shadowBlur = 0;
+                ctx.fillText("GAME OVER", CANVAS_W/2-110, CANVAS_H/2-30);
+                ctx.font = "16px monospace";
                 ctx.fillStyle = "#ffde9e";
-                ctx.fillText("点击「重来」继续挑战", WIDTH/2-145, HEIGHT/2+30);
+                ctx.fillText("点击「重来」继续挑战", CANVAS_W/2-135, CANVAS_H/2+25);
             }
         }
         
-        // 整体更新渲染
-        function updateGame() {
-            if (!gameOver) {
-                updateMarioMovement();
-                updateEnemies();
-                handleEnemyCollision();
-                handleCoinCollection();
-                // 再次二次校正以防位移后穿透(稳健)
-                if (!gameOver) {
-                    applyPlatformCollision();
-                }
-                // 如果跌落死亡在垂直碰撞已经标记gameOver
-            }
-            drawAll();
-        }
-        
-        function drawAll() {
+        // ---------- 主渲染 ----------
+        function render() {
             drawBackground();
             drawPlatforms();
-            // 金币闪烁效果加简单旋转省略
             drawCoins();
-            for(let e of enemies) {
-                drawEnemy(e);
-            }
+            for (let e of enemies) drawEnemy(e);
             drawMario();
             drawGameOverlay();
-            // 画辅助漂浮粒子 (简单)
-            ctx.font = "bold 14monospace";
-            ctx.fillStyle = "#ffffbb";
-            ctx.shadowBlur = 0;
-            ctx.fillText("⭐", 15, 55);
         }
         
-        // ---------- 键盘控制 ----------
+        // ---------- 更新循环（逻辑+渲染）----------
+        function updateGame() {
+            if (!gameOver) {
+                updateMario();
+                updateEnemies();
+                handleEnemyCollision();
+                handleCoins();
+                // 二次安全矫正（防止卡墙）
+                if (!gameOver) applyPlatformCollision();
+            }
+            render();
+        }
+        
+        // ---------- 输入系统 (键盘 + 触摸) ----------
         let leftPressed = false;
         let rightPressed = false;
         let jumpRequested = false;
         
-        function handleKeyDown(e) {
+        // 键盘
+        function onKeyDown(e) {
             if (gameOver) return;
             const key = e.key;
             if (key === 'ArrowLeft' || key === 'Left' || key === 'a') {
@@ -655,14 +589,12 @@ let mario = {
                 rightPressed = true;
                 e.preventDefault();
             } else if (key === 'ArrowUp' || key === ' ' || key === 'Space' || key === 'w') {
-                if (!gameOver) {
-                    jumpRequested = true;
-                }
+                jumpRequested = true;
                 e.preventDefault();
             }
         }
         
-        function handleKeyUp(e) {
+        function onKeyUp(e) {
             const key = e.key;
             if (key === 'ArrowLeft' || key === 'Left' || key === 'a') {
                 leftPressed = false;
@@ -670,46 +602,59 @@ let mario = {
             } else if (key === 'ArrowRight' || key === 'Right' || key === 'd') {
                 rightPressed = false;
                 e.preventDefault();
-            } else if (key === 'ArrowUp' || key === ' ' || key === 'Space' || key === 'w') {
-                // 不处理长按重复即可, 无需清空请求，但让每次按都会尝试跳一次, 需要确保物理只生效一次（由grounded限制）
-                // 为了防止按住连续跳每帧都触发，但在update里使用jumpRequested后置false已经确保一次起跳
-                // 但是按住不放时每帧都会再次触发keydown，为了让手感更好，保留请求但游戏逻辑确保跳跃后清除请求
-                // 也不做额外动作
-                e.preventDefault();
             }
         }
         
-        // 重置按钮逻辑
-        const resetBtn = document.getElementById('resetButton');
+        // 触摸按钮控制 (支持触摸开始/结束/离开)
+        function attachTouchControls() {
+            const leftBtn = document.getElementById('leftBtn');
+            const rightBtn = document.getElementById('rightBtn');
+            const jumpBtn = document.getElementById('jumpBtn');
+            
+            // 左按钮
+            leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); leftPressed = true; });
+            leftBtn.addEventListener('touchend', (e) => { e.preventDefault(); leftPressed = false; });
+            leftBtn.addEventListener('mousedown', () => { leftPressed = true; });
+            leftBtn.addEventListener('mouseup', () => { leftPressed = false; });
+            // 右按钮
+            rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); rightPressed = true; });
+            rightBtn.addEventListener('touchend', (e) => { e.preventDefault(); rightPressed = false; });
+            rightBtn.addEventListener('mousedown', () => { rightPressed = true; });
+            rightBtn.addEventListener('mouseup', () => { rightPressed = false; });
+            // 跳跃
+            jumpBtn.addEventListener('touchstart', (e) => { e.preventDefault(); jumpRequested = true; });
+            jumpBtn.addEventListener('mousedown', () => { jumpRequested = true; });
+            // 防止鼠标移出时还按着
+            document.body.addEventListener('mouseup', () => {
+                // 只复位左右（跳跃是一次性请求）
+                leftPressed = false;
+                rightPressed = false;
+            });
+        }
+        
+        // ---------- 启动游戏 ----------
+        resetGame(); // 初始状态
+        attachTouchControls();
+        window.addEventListener('keydown', onKeyDown);
+        window.addEventListener('keyup', onKeyUp);
+        
+        // 重置按钮监听
         resetBtn.addEventListener('click', () => {
             resetGame();
             gameOver = false;
-            // 清除残留按键状态
             leftPressed = false;
             rightPressed = false;
             jumpRequested = false;
-            gameStatusSpan.innerText = "🏃‍♂️ 游戏中";
-            gameStatusSpan.style.color = "#f7e05e";
-            // 额外再次确保位置有效
-            applyPlatformCollision();
         });
         
-        // 监听键盘
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('keyup', handleKeyUp);
-        
-        // 启动游戏循环
+        // 主循环
         function gameLoop() {
             updateGame();
-            animationId = requestAnimationFrame(gameLoop);
+            requestAnimationFrame(gameLoop);
         }
-        
-        // 初始化游戏
-        resetGame();   // 设置初始状态
         gameLoop();
         
-        // 防止页面滚动（针对空格箭头）
-        window.addEventListener('contextmenu', (e) => e.preventDefault());
+        // 确保canvas初始比例正确 (CSS已经自适应)
     })();
 </script>
 </body>
